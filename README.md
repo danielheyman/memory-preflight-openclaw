@@ -1,41 +1,79 @@
 # Memory Preflight Plugin for OpenClaw
 
-Automatically searches workspace memory files before each agent turn and injects relevant context.
-
-## Features
-
-- **Auto-recall**: Searches memory files based on user query entities
-- **LLM entity extraction**: Uses local Ollama (gemma3:4b) to extract key entities from queries
-- **Smart ranking**: Combines vector similarity with file freshness
-- **Configurable**: Adjustable result limits and memory directories
-
-## Installation
-
-1. Clone this repo into your OpenClaw extensions directory:
-   ```bash
-   cd ~/.openclaw/extensions
-   git clone https://github.com/danielheyman/memory-preflight-openclaw.git memory-preflight
-   ```
-
-2. Restart OpenClaw gateway
-
-## Requirements
-
-- OpenClaw with plugin support
-- Ollama running locally with `gemma3:4b` model
-  - Install: `ollama pull gemma3:4b`
-  - Run: `ollama serve`
+Auto-injects relevant memory context before each agent turn using a hybrid local/cloud approach.
 
 ## How It Works
 
-1. Hooks into `before_agent_start` event
-2. Extracts entities from user's message using local LLM
-3. Searches memory files using OpenClaw's memory search tool
-4. Injects relevant snippets as `memory-hints` context
+```
+User Query
+    ↓
+Ollama (gemma3:4b) extracts keywords (~400ms)
+    ↓
+QMD BM25 search (~350ms, local)
+    ↓
+Results found? → Inject hints ✓
+    ↓
+No results? → Gemini fallback (~250ms, semantic)
+    ↓
+Inject hints ✓
+```
+
+## Features
+
+- **Fast local search** via QMD BM25 for keyword matches
+- **Semantic fallback** via Gemini when BM25 finds nothing
+- **Entity extraction** via Ollama (local LLM) 
+- **Logging** to `memory/meta/search-log.jsonl` for analysis
+
+## Performance
+
+| Query Type | Path | Time |
+|------------|------|------|
+| Keyword match | Ollama → QMD | ~750ms |
+| Semantic gap | Ollama → QMD → Gemini | ~1s |
+
+## Requirements
+
+- [Ollama](https://ollama.ai) running with `gemma3:4b` model
+- [QMD](https://github.com/tobi/qmd) installed (`bun install -g github:tobi/qmd`)
+- QMD collection set up: `qmd collection add /path/to/memory --name memory --mask "**/*.md"`
+- OpenClaw with Gemini memorySearch configured (for fallback)
+
+## Installation
+
+1. Clone to OpenClaw extensions:
+   ```bash
+   git clone https://github.com/danielheyman/memory-preflight-openclaw ~/.openclaw/extensions/memory-preflight
+   ```
+
+2. Add to OpenClaw config (`~/.openclaw/openclaw.json`):
+   ```json
+   {
+     "plugins": {
+       "allow": ["memory-preflight"],
+       "entries": {
+         "memory-preflight": { "enabled": true }
+       }
+     }
+   }
+   ```
+
+3. Set up QMD:
+   ```bash
+   qmd collection add ~/.openclaw/workspace/memory --name memory --mask "**/*.md"
+   qmd embed
+   ```
+
+4. Restart OpenClaw gateway
 
 ## Configuration
 
-Edit `openclaw.plugin.json` to customize behavior.
+The plugin uses these defaults:
+- Ollama endpoint: `http://127.0.0.1:11434`
+- Model: `gemma3:4b`
+- QMD binary: `~/.bun/bin/qmd`
+- Max results: 5
+- Max search terms: 3
 
 ## License
 
