@@ -14,7 +14,7 @@ Automatically searches workspace memory files before each agent turn and injects
 1. Clone this repo into your OpenClaw extensions directory:
    ```bash
    cd ~/.openclaw/extensions
-   git clone https://github.com/dbitt/memory-preflight.git
+   git clone https://github.com/danielheyman/memory-preflight-openclaw.git memory-preflight
    ```
 
 2. Restart OpenClaw gateway
@@ -22,9 +22,9 @@ Automatically searches workspace memory files before each agent turn and injects
 ## Requirements
 
 - OpenClaw with plugin support
-- (Optional) Ollama running locally for LLM-based entity extraction
-  - Recommended model: `gemma3:4b`
-  - Falls back to stop-word filtering if Ollama unavailable
+- Ollama running locally with `gemma3:4b` model
+  - Install: `ollama pull gemma3:4b`
+  - Run: `ollama serve`
 
 ## How It Works
 
