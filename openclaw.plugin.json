@@ -1,0 +1,11 @@
+{
+  "id": "memory-preflight",
+  "name": "Memory Preflight",
+  "description": "Auto-recall from workspace memory files before each response",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
