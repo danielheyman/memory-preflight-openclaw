@@ -88,48 +88,23 @@ const memoryPreflightPlugin = {
       // Clean up extra whitespace
       prompt = prompt.trim();
 
-      // Try LLM-based entity extraction first (gemma3:4b via Ollama)
-      let searchQuery: string;
+      // Try LLM-based entity extraction (gemma3:4b via Ollama)
       const llmEntities = await extractEntities(prompt);
       
-      if (llmEntities) {
-        // Use LLM-extracted entities
-        searchQuery = llmEntities.toLowerCase().replace(/,/g, " ");
-        console.log(`[memory-preflight] LLM entities: "${llmEntities}" → "${searchQuery}"`);
-      } else {
-        // Fallback: Extract keywords by removing stop words
-        const stopWords = new Set([
-          // Question words
-          "what", "who", "where", "when", "why", "how", "which",
-          // Be verbs
-          "is", "are", "was", "were", "be", "been", "being",
-          // Articles/determiners
-          "the", "a", "an", "this", "that", "these", "those",
-          // Pronouns
-          "i", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them",
-          "my", "your", "his", "its", "our", "their",
-          // Auxiliary verbs
-          "do", "does", "did", "have", "has", "had", "can", "could", "will", "would", "should",
-          // Prepositions
-          "about", "with", "from", "into", "of", "for", "on", "at", "to", "by",
-          // Conjunctions
-          "and", "or", "but", "if", "then", "so", "because",
-          // Common verbs
-          "tell", "know", "think", "see", "say", "talk", "look", "find", "get", "give",
-          // Adverbs
-          "just", "also", "very", "really", "now", "here", "there",
-          // Meta-words about the system (asking about memories/hints)
-          "hints", "hint", "seeing", "showing", "show", "recall", "remember", "remembered",
-          "memory", "memories", "file", "files", "context", "relevant", "related",
-        ]);
-        searchQuery = prompt
-          .toLowerCase()
-          .split(/\s+/)
-          .filter((w) => w.length > 1 && !stopWords.has(w.replace(/[?.,!]/g, "")))
-          .join(" ");
-        console.log(`[memory-preflight] stopword fallback: "${searchQuery}"`);
+      if (!llmEntities) {
+        // Ollama not available - warn user and skip memory search
+        console.log("[memory-preflight] Ollama not available, skipping memory search");
+        return {
+          prependContext: `<memory-hints>
+⚠️ Local LLM (Ollama) not running. Memory search disabled.
+Run \`ollama serve\` and ensure gemma3:4b is available.
+</memory-hints>`,
+        };
       }
       
+      // Use LLM-extracted entities
+      const searchQuery = llmEntities.toLowerCase().replace(/,/g, " ");
+      console.log(`[memory-preflight] LLM entities: "${llmEntities}" → "${searchQuery}"`);
       console.log(`[memory-preflight] cleaned: "${prompt.slice(0, 60)}..." → query: "${searchQuery}"`);
 
       // Skip if cleaned prompt is too short
