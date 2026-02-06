@@ -192,13 +192,6 @@ const memoryPreflightPlugin = {
         return;
       }
 
-      // Skip very short messages (likely acknowledgments)
-      const wordCount = prompt.split(/\s+/).filter(w => w.length > 1).length;
-      if (wordCount < 3) {
-        console.log("[memory-preflight] skipping - too few words");
-        return;
-      }
-
       // Extract entities via Ollama (with synonyms)
       const startExtract = Date.now();
       const llmEntities = await extractEntities(prompt);
