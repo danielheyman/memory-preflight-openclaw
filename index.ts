@@ -178,9 +178,24 @@ const memoryPreflightPlugin = {
       const skipPatterns = [
         /^(ok|okay|sure|thanks|thank you|yes|no|yep|nope|got it|sounds good)\.?$/i,
         /^(hi|hello|hey|morning|evening)\.?$/i,
+        /^(yeah|yea|yup|sg|lgtm|k|kk|nice|cool|great|perfect|done|push|commit)\.?$/i,
+        /^Read HEARTBEAT\.md/i,  // Heartbeat polls always search same thing
       ];
       if (skipPatterns.some((p) => p.test(prompt))) {
         console.log("[memory-preflight] skipping - matches skip pattern");
+        return;
+      }
+
+      // Skip Discord Guild messages (ephemeral chat, not memory-worthy)
+      if (prompt.includes("[Discord Guild #")) {
+        console.log("[memory-preflight] skipping - Discord Guild message (ephemeral)");
+        return;
+      }
+
+      // Skip very short messages (likely acknowledgments)
+      const wordCount = prompt.split(/\s+/).filter(w => w.length > 1).length;
+      if (wordCount < 3) {
+        console.log("[memory-preflight] skipping - too few words");
         return;
       }
 
